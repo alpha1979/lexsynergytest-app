@@ -3,22 +3,21 @@
 declare(strict_types=1);
 
 use App\Service\UserService;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use App\Entity\User;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Repository\UserRepository;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 
-class UserServiceTest extends KernelTestCase
+class UserServiceTest extends TestCase
 {
-    private EntityManagerInterface $entityManager;
     private UserPasswordHasherInterface $userPasswordHasher;
+
+    private UserRepository $userRepository;
 
     protected function setUp(): void
     {
-        $kernel = self::bootKernel();
-        $this->entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $this->userRepository = $this->createMock(UserRepository::class);
         $this->userPasswordHasher = $this->createMock(UserPasswordHasherInterface::class);
       
     }
@@ -34,15 +33,8 @@ class UserServiceTest extends KernelTestCase
     //     $user->setPassword($password);
     //     $user->setUsername($username);
         
-    //     $this->entityManager
-    //         ->expects($this->once())
-    //         ->method('persist')
-    //         ->with($user);
-
-    //     $this->entityManager
-    //         ->expects($this->once())
-    //         ->method('flush');
-    //     // dd($user);
+       
+    //     $this->userRepository->expects($this->once())->method('save')->with($user, true);
     //     $createdUser = $this->getSut()->createUser($email, $password, $username);
 
     //     $this->assertInstanceOf(User::class, $createdUser);
@@ -56,26 +48,38 @@ class UserServiceTest extends KernelTestCase
 
         $users = [$user1, $user2];
 
-        $this->entityManager->find
-            // ->expects($this->once())
-            // ->method('getRepository')
-            // ->with(User::class)
-            // ->willReturnSelf();
-
-        $this->entityManager
-            ->expects($this->once())
-            ->method('findAll')
-            ->willReturn($users);
-
+        $this->userRepository->expects($this->once())->method('findAll')->willReturn($users);
         $retrievedUsers = $this->getSut()->getUsers();
 
         $this->assertSame($users, $retrievedUsers);
     }
     
+    public function testGetUserByUsername(): void
+    {
+        $username = 'atit';
+        $user = new User();
+        $this->userRepository->expects($this->once())->method('findOneBy')->with(['username' => $username])->willReturn($user);
+
+        $retrievedUser = $this->getSut()->getUserByUsername($username);
+        $this->assertSame($user, $retrievedUser);
+    }
+
+    // public function testGetUserByUsernameUserNotFoundException(): void
+    // {
+    //     $username = 'atit';
+    //     $user = new User();
+    //     $this->userRepository->expects($this->once())->method('findOneBy')->with(['username' => $username])->willReturn($user);
+
+    //     $this->expectException(UserNotFoundException::class);
+    //             $this->getSut()->getUserByUsername('atit1');
+
+    //     $this->expectExceptionMessage('User "atit" not found');
+    // }
+
     private function getSut(): UserService
     {
         return new UserService(
-            $this->entityManager,
+            $this->userRepository,
             $this->userPasswordHasher
         );
     }

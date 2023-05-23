@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\User;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
@@ -12,7 +13,7 @@ use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 class UserService
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
+        private UserRepository $userRepository,
         private UserPasswordHasherInterface $userPasswordHasher
     )
     {
@@ -34,28 +35,25 @@ class UserService
         );
         $user->setUsername($userName);
 
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
+        $this->userRepository->save($user, true);
         return $user;
     }
 
     public function getUsers(): array
     {
-        // return $this->userRepository->findAll();
-
-        return $this->entityManager->getRepository(User::class)->findAll();
+        return $this->userRepository->findAll();
     }
 
     public function getUserByUsername(string $username): ?User 
     {
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username])
+        $user = $this->userRepository->findOneBy(['username' => $username])
             ?? throw new UserNotFoundException(sprintf('User "%s" not found', $username));
         return $user;
     }
 
     public function validateUserCredential(string $username, string $password): bool
     {
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['username' => $username]);
+        $user = $this->userRepository->findOneBy(['username' => $username]);
         if (!$user) {
             return false;
         }
@@ -82,8 +80,7 @@ class UserService
                 $user,
                 $updatedPassword
             ));
-            $this->entityManager->persist($user);
-            $this->entityManager->flush();
+            $this->userRepository->save($user, true);
         }
         
         return $user;
