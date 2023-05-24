@@ -64,17 +64,12 @@ class UserServiceTest extends TestCase
         $this->assertSame($user, $retrievedUser);
     }
 
-    // public function testGetUserByUsernameUserNotFoundException(): void
-    // {
-    //     $username = 'atit';
-    //     $user = new User();
-    //     $this->userRepository->expects($this->once())->method('findOneBy')->with(['username' => $username])->willReturn($user);
-
-    //     $this->expectException(UserNotFoundException::class);
-    //             $this->getSut()->getUserByUsername('atit1');
-
-    //     $this->expectExceptionMessage('User "atit" not found');
-    // }
+    public function testGetUserByUsernameUserNotFoundException(): void
+    {
+        $this->expectException(UserNotFoundException::class);
+        $this->expectExceptionMessage('User "atit" not found');
+        $this->getSut()->getUserByUsername('atit');
+    }
 
     private function getSut(): UserService
     {
